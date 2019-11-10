@@ -1,7 +1,10 @@
+#![warn(clippy::all)]
+pub mod request;
 #[macro_use]
 extern crate clap;
-
 use clap::{App, AppSettings, Arg};
+use std::io;
+use std::io::copy;
 
 arg_enum! {
     #[derive(Debug)]
@@ -14,7 +17,7 @@ arg_enum! {
     }
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opts = App::new("My Super Program")
         .version(crate_version!())
         .author(crate_authors!())
@@ -34,6 +37,14 @@ fn main() {
         )
         .get_matches();
 
+    let url = opts.value_of("url").unwrap();
+    let method = opts.value_of("method").unwrap();
     // unwrap safe due to url being mandatory
-    println!("{}", opts.value_of("url").unwrap());
+    println!("{} {}", method, url);
+    let mut response = request::request(method, url).expect("Request failed");
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
+
+    copy(&mut response, &mut stdout).expect("Failed to read response");
+    Ok(())
 }
