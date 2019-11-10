@@ -6,10 +6,11 @@ use clap::{App, AppSettings, Arg};
 arg_enum! {
     #[derive(Debug)]
     pub enum Method {
-        POST,
+        DELETE,
         GET,
         PATCH,
-        DELETE,
+        POST,
+        PUT,
     }
 }
 
