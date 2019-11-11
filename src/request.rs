@@ -1,10 +1,18 @@
 use reqwest;
-use reqwest::{Method, Response};
+use reqwest::header;
 
-pub fn request(method: &str, url: &str) -> Result<Response, Box<dyn std::error::Error>> {
+use reqwest::{Method, RequestBuilder};
+pub fn builder(method: &str, url: &str) -> Result<RequestBuilder, Box<dyn std::error::Error>> {
     let client = reqwest::Client::new();
-    let response = client
-        .request(Method::from_bytes(method.as_bytes())?, url)
-        .send()?;
-    Ok(response)
+    Ok(client.request(Method::from_bytes(method.as_bytes())?, url))
+}
+
+pub fn headers(request: RequestBuilder) -> RequestBuilder {
+    default_headers(request)
+}
+
+fn default_headers(request: RequestBuilder) -> RequestBuilder {
+    request
+        .header(header::ACCEPT, "*/*")
+        .header(header::ACCEPT_ENCODING, "gzip, deflate")
 }

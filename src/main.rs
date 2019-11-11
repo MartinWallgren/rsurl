@@ -1,5 +1,7 @@
 #![warn(clippy::all)]
 pub mod request;
+
+use crate::request::*;
 #[macro_use]
 extern crate clap;
 use clap::{App, AppSettings, Arg};
@@ -41,7 +43,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let method = opts.value_of("method").unwrap();
     // unwrap safe due to url being mandatory
     println!("{} {}", method, url);
-    let mut response = request::request(method, url).expect("Request failed");
+    let mut request = builder(method, url).expect("Request failed");
+    request = headers(request);
+    let mut response = request.send()?;
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
 
