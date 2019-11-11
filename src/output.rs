@@ -12,6 +12,7 @@ pub fn print_request(request: &Request) {
 }
 
 pub fn print_response(mut response: Response) {
+    println!("{:?} {}", response.version(), response.status());
     print_headers(response.headers());
 
     let stdout = io::stdout();
