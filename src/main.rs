@@ -1,9 +1,9 @@
 #![warn(clippy::all)]
-pub mod request;
 pub mod output;
+pub mod request;
 
-use crate::request::*;
 use crate::output::*;
+use crate::request::*;
 
 #[macro_use]
 extern crate clap;
