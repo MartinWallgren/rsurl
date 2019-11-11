@@ -1,9 +1,16 @@
 use reqwest;
 use reqwest::header;
 
-use reqwest::{Method, RequestBuilder};
-pub fn builder(method: &str, url: &str) -> Result<RequestBuilder, Box<dyn std::error::Error>> {
-    let client = reqwest::Client::new();
+use reqwest::{Client, Method, RequestBuilder};
+
+pub fn client() -> Client {
+    Client::new()
+}
+pub fn builder(
+    client: &Client,
+    method: &str,
+    url: &str,
+) -> Result<RequestBuilder, Box<dyn std::error::Error>> {
     Ok(client.request(Method::from_bytes(method.as_bytes())?, url))
 }
 

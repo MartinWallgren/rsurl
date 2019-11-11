@@ -1,12 +1,13 @@
 #![warn(clippy::all)]
 pub mod request;
+pub mod output;
 
 use crate::request::*;
+use crate::output::*;
+
 #[macro_use]
 extern crate clap;
 use clap::{App, AppSettings, Arg};
-use std::io;
-use std::io::copy;
 
 arg_enum! {
     #[derive(Debug)]
@@ -39,16 +40,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .get_matches();
 
+    // unwrap safe due to url being mandatory
     let url = opts.value_of("url").unwrap();
     let method = opts.value_of("method").unwrap();
-    // unwrap safe due to url being mandatory
-    println!("{} {}", method, url);
-    let mut request = builder(method, url).expect("Request failed");
-    request = headers(request);
-    let mut response = request.send()?;
-    let stdout = io::stdout();
-    let mut stdout = stdout.lock();
 
-    copy(&mut response, &mut stdout).expect("Failed to read response");
+    let client = request::client();
+    let mut rb = builder(&client, method, url).expect("Request failed");
+    rb = headers(rb);
+    let request = rb.build()?;
+    print_request(&request);
+    let response = client.execute(request)?;
+    print_response(response);
     Ok(())
 }
