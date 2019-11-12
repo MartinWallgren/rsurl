@@ -21,11 +21,18 @@ arg_enum! {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let opts = App::new("My Super Program")
+    let opts = App::new("rsurl")
         .version(crate_version!())
         .author(crate_authors!())
         .setting(AppSettings::AllowMissingPositional)
         .about("Http requests from the command line.")
+        .arg(
+            Arg::with_name("body")
+                .short("b")
+                .long("body")
+                .value_name("FILE")
+                .required(false),
+        )
         .arg(
             Arg::from_usage("<method> 'the http method to use'")
                 .possible_values(&Method::variants())
@@ -47,10 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = request::client();
     let mut rb = builder(&client, method, url).expect("Request failed");
     rb = headers(rb);
-    rb = match get_body_source() {
-        Some(s) => body(rb, s)?,
-        None => rb,
-    };
+    rb = body(rb, get_body(opts.value_of("body"))?);
 
     let request = rb.build()?;
     print_request(&request);

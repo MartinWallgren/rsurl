@@ -4,11 +4,8 @@ use reqwest::header;
 
 use reqwest::{self, Body, Client, Method, RequestBuilder};
 
+use std::fs::File;
 use std::io::{self, Read};
-pub enum BodySource {
-    StdIn,
-}
-
 pub fn client() -> Client {
     Client::new()
 }
@@ -30,14 +27,11 @@ fn default_headers(request: RequestBuilder) -> RequestBuilder {
         .header(header::ACCEPT_ENCODING, "gzip, deflate")
 }
 
-pub fn body(
-    request: RequestBuilder,
-    source: BodySource,
-) -> Result<RequestBuilder, Box<dyn std::error::Error>> {
-    let rb = match source {
-        BodySource::StdIn => request.body(read_stdin()?),
-    };
-    Ok(rb)
+pub fn body(request: RequestBuilder, body: Option<Body>) -> RequestBuilder {
+    match body {
+        Some(b) => request.body(b),
+        None => request,
+    }
 }
 
 fn read_stdin() -> Result<Body, Box<dyn std::error::Error>> {
@@ -46,11 +40,13 @@ fn read_stdin() -> Result<Body, Box<dyn std::error::Error>> {
     Ok(Body::from(payload))
 }
 
-pub fn get_body_source() -> Option<BodySource> {
-    println!("{:?}", atty::is(Stream::Stdin));
+pub fn get_body(in_file: Option<&str>) -> Result<Option<Body>, Box<dyn std::error::Error>> {
+    if in_file.is_some() {
+        return Ok(Some(Body::from(File::open(in_file.unwrap())?)));
+    }
     if !atty::is(Stream::Stdin) {
         //TODO: Add a way to not read body for std_in for non terminal.
-        return Some(BodySource::StdIn);
+        return Ok(Some(read_stdin()?));
     }
-    None
+    Ok(None)
 }
