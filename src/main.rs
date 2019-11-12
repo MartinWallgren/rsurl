@@ -7,7 +7,7 @@ use crate::request::*;
 
 #[macro_use]
 extern crate clap;
-use clap::{App, AppSettings, Arg};
+use clap::{App, AppSettings, Arg, ArgMatches};
 
 arg_enum! {
     #[derive(Debug)]
@@ -20,8 +20,8 @@ arg_enum! {
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let opts = App::new("rsurl")
+fn get_args() -> ArgMatches<'static> {
+    App::new("rsurl")
         .version(crate_version!())
         .author(crate_authors!())
         .setting(AppSettings::AllowMissingPositional)
@@ -45,16 +45,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .required(true)
                 .takes_value(true),
         )
-        .get_matches();
+        .get_matches()
+}
 
-    // unwrap safe due to url being mandatory
-    let url = opts.value_of("url").unwrap();
-    let method = opts.value_of("method").unwrap();
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = get_args();
+
+    // unwrap safe for mandatory values
+    let url = args.value_of("url").unwrap();
+    let method = args.value_of("method").unwrap();
 
     let client = request::client();
     let mut rb = builder(&client, method, url).expect("Request failed");
     rb = headers(rb);
-    rb = body(rb, get_body(opts.value_of("body"))?);
+    rb = body(rb, get_body(args.value_of("body"))?);
 
     let request = rb.build()?;
     print_request(&request);
