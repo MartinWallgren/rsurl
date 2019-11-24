@@ -58,7 +58,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = request::client();
     let mut rb = builder(&client, method, url).expect("Request failed");
     rb = headers(rb);
-    rb = body(rb, get_body(args.value_of("body"))?);
+
+    if let Some(bs) = get_body_source(&args) {
+        rb = rb.body(bs.get_body()?);
+    }
 
     let request = rb.build()?;
     print_request(&request);

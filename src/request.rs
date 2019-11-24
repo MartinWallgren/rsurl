@@ -4,8 +4,30 @@ use reqwest::header;
 
 use reqwest::{self, Body, Client, Method, RequestBuilder};
 
+use clap::ArgMatches;
 use std::fs::File;
 use std::io::{self, Read};
+
+pub enum BodySource {
+    StdIn,
+    File(String),
+}
+
+impl BodySource {
+    pub fn get_body(&self) -> Result<Body, Box<dyn std::error::Error>> {
+        match &self {
+            BodySource::File(path) => Ok(Body::from(File::open(&path)?)),
+            BodySource::StdIn => BodySource::read_stdin(),
+        }
+    }
+
+    fn read_stdin() -> Result<Body, Box<dyn std::error::Error>> {
+        let mut payload = Vec::new();
+        io::stdin().read_to_end(&mut payload)?;
+        Ok(Body::from(payload))
+    }
+}
+
 pub fn client() -> Client {
     Client::new()
 }
@@ -27,26 +49,14 @@ fn default_headers(request: RequestBuilder) -> RequestBuilder {
         .header(header::ACCEPT_ENCODING, "gzip, deflate")
 }
 
-pub fn body(request: RequestBuilder, body: Option<Body>) -> RequestBuilder {
-    match body {
-        Some(b) => request.body(b),
-        None => request,
+pub fn get_body_source(args: &ArgMatches) -> Option<BodySource> {
+    if let Some(body) = args.value_of("body") {
+        return Some(BodySource::File(body.to_string()));
     }
-}
 
-fn read_stdin() -> Result<Body, Box<dyn std::error::Error>> {
-    let mut payload = Vec::new();
-    io::stdin().read_to_end(&mut payload)?;
-    Ok(Body::from(payload))
-}
-
-pub fn get_body(in_file: Option<&str>) -> Result<Option<Body>, Box<dyn std::error::Error>> {
-    if in_file.is_some() {
-        return Ok(Some(Body::from(File::open(in_file.unwrap())?)));
-    }
+    println!("{:?}", atty::is(Stream::Stdin));
     if !atty::is(Stream::Stdin) {
-        //TODO: Add a way to not read body for std_in for non terminal.
-        return Ok(Some(read_stdin()?));
+        return Some(BodySource::StdIn);
     }
-    Ok(None)
+    None
 }
