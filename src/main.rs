@@ -24,26 +24,28 @@ fn get_args() -> ArgMatches<'static> {
     App::new("rsurl")
         .version(crate_version!())
         .author(crate_authors!())
-        .setting(AppSettings::AllowMissingPositional)
+        .setting(AppSettings::TrailingVarArg)
         .about("Http requests from the command line.")
         .arg(
             Arg::with_name("body")
                 .short("b")
                 .long("body")
                 .value_name("FILE")
+                .takes_value(true)
                 .required(false),
         )
         .arg(
-            Arg::from_usage("<method> 'the http method to use'")
+            Arg::with_name("method")
                 .possible_values(&Method::variants())
-                .required(true)
-                .default_value("GET"),
+                .help("the http method to use")
+                .required(true),
         )
+        .arg(Arg::with_name("url").help("the request url").required(true))
         .arg(
-            Arg::with_name("url")
-                .help("the request url")
-                .required(true)
-                .takes_value(true),
+            Arg::with_name("item")
+                .help("extra request items such as headers, query params etc")
+                .multiple(true)
+                .required(false),
         )
         .get_matches()
 }
