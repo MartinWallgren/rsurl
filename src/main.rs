@@ -46,6 +46,7 @@ fn get_args() -> ArgMatches<'static> {
             Arg::with_name("item")
                 .help("extra request items such as headers, query params etc")
                 .multiple(true)
+                .validator(params::validate)
                 .required(false),
         )
         .get_matches()

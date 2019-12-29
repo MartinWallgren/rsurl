@@ -12,6 +12,16 @@ pub struct Param {
     pub param_type: ParamType,
 }
 
+pub fn validate(item: String) -> Result<(), String> {
+    if item.find(':').is_some() {
+        return Ok(());
+    }
+    if item.find('=').is_some() {
+        return Ok(());
+    }
+    Err(format!("'{}' is not a valid item.", item))
+}
+
 pub fn parse(items: Vec<&str>) -> Result<Vec<Param>, Box<dyn std::error::Error>> {
     let mut params = Vec::new();
 
