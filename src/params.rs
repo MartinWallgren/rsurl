@@ -13,18 +13,36 @@ pub struct Param {
 }
 
 pub fn parse(param: &str) -> Result<Param, Box<dyn std::error::Error>> {
-    let mut keyval = param.splitn(2, |c| c == ':' || c == '=');
-
-    let key = keyval.next();
-    let val = keyval.next();
-    match [key, val] {
-        [Some(k), Some(v)] => Ok(Param {
-            key: k.to_owned(),
-            value: v.to_owned(),
-            param_type: ParamType::HEADER,
-        }),
-        _ => Err("Oh noes".into()),
+    let mut key = String::new();
+    let mut param_type: Option<ParamType> = None;
+    let mut chars = param.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '=' {
+            if let Some(&'=') = chars.peek() {
+                param_type = Some(ParamType::QUERY);
+                chars.next();
+            } else {
+                param_type = Some(ParamType::DATA);
+            }
+            break;
+        }
+        if c == ':' {
+            param_type = Some(ParamType::HEADER);
+            break;
+        }
+        key.push(c);
     }
+
+    if param_type.is_none() {
+        return Err("Unable to parse paramter.".into());
+    }
+
+    let value: String = chars.collect();
+    Ok(Param {
+        key: key.trim().to_owned(),
+        value: value.trim().to_owned(),
+        param_type: param_type.unwrap(),
+    })
 }
 
 #[cfg(test)]
@@ -49,6 +67,50 @@ mod tests {
             key: String::from("key"),
             value: String::from("multiple=divider:ignored"),
             param_type: ParamType::HEADER,
+        };
+        assert_eq!(parse(arg).unwrap(), expected);
+    }
+
+    #[test]
+    fn test_parse_data() {
+        let arg = "key=val";
+        let expected = Param {
+            key: String::from("key"),
+            value: String::from("val"),
+            param_type: ParamType::DATA,
+        };
+        assert_eq!(parse(arg).unwrap(), expected);
+    }
+
+    #[test]
+    fn test_parse_data_trim() {
+        let arg = "key = val";
+        let expected = Param {
+            key: String::from("key"),
+            value: String::from("val"),
+            param_type: ParamType::DATA,
+        };
+        assert_eq!(parse(arg).unwrap(), expected);
+    }
+
+    #[test]
+    fn test_parse_query_param_trim() {
+        let arg = "key == val";
+        let expected = Param {
+            key: String::from("key"),
+            value: String::from("val"),
+            param_type: ParamType::QUERY,
+        };
+        assert_eq!(parse(arg).unwrap(), expected);
+    }
+
+    #[test]
+    fn test_parse_query_param() {
+        let arg = "key==val";
+        let expected = Param {
+            key: String::from("key"),
+            value: String::from("val"),
+            param_type: ParamType::QUERY,
         };
         assert_eq!(parse(arg).unwrap(), expected);
     }
