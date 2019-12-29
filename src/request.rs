@@ -2,9 +2,9 @@ use atty;
 use atty::Stream;
 use reqwest::header;
 
-use reqwest::{self, Body, Client, Method, RequestBuilder};
-
+use crate::params::{Param, ParamType};
 use clap::ArgMatches;
+use reqwest::{self, Body, Client, Method, RequestBuilder};
 use std::fs::File;
 use std::io::{self, Read};
 
@@ -31,6 +31,7 @@ impl BodySource {
 pub fn client() -> Client {
     Client::new()
 }
+
 pub fn builder(
     client: &Client,
     method: &str,
@@ -39,8 +40,12 @@ pub fn builder(
     Ok(client.request(Method::from_bytes(method.as_bytes())?, url))
 }
 
-pub fn headers(request: RequestBuilder) -> RequestBuilder {
-    default_headers(request)
+pub fn headers(request: RequestBuilder, params: &[Param]) -> RequestBuilder {
+    let mut rb = default_headers(request);
+    for h in params.iter().filter(|p| p.param_type == ParamType::HEADER) {
+        rb = rb.header(h.key.as_str(), h.value.as_str());
+    }
+    rb
 }
 
 fn default_headers(request: RequestBuilder) -> RequestBuilder {

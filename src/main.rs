@@ -60,7 +60,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = request::client();
     let mut rb = builder(&client, method, url).expect("Request failed");
-    rb = headers(rb);
+
+    let params = match args.values_of("item") {
+        Some(items) => params::parse(items.collect()).unwrap(),
+        None => vec![],
+    };
+    rb = headers(rb, &params);
 
     if let Some(bs) = get_body_source(&args) {
         rb = rb.body(bs.get_body()?);

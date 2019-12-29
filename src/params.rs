@@ -12,7 +12,20 @@ pub struct Param {
     pub param_type: ParamType,
 }
 
-pub fn parse(param: &str) -> Result<Param, Box<dyn std::error::Error>> {
+pub fn parse(items: Vec<&str>) -> Result<Vec<Param>, Box<dyn std::error::Error>> {
+    let mut params = Vec::new();
+
+    for item in items {
+        match parse_param(item) {
+            Ok(p) => params.push(p),
+            Err(e) => return Err(e),
+        };
+    }
+
+    Ok(params)
+}
+
+pub fn parse_param(param: &str) -> Result<Param, Box<dyn std::error::Error>> {
     let mut key = String::new();
     let mut param_type: Option<ParamType> = None;
     let mut chars = param.chars().peekable();
@@ -34,7 +47,7 @@ pub fn parse(param: &str) -> Result<Param, Box<dyn std::error::Error>> {
     }
 
     if param_type.is_none() {
-        return Err("Unable to parse paramter.".into());
+        return Err("Unable to parse item.".into());
     }
 
     let value: String = chars.collect();
@@ -57,7 +70,7 @@ mod tests {
             value: String::from("val"),
             param_type: ParamType::HEADER,
         };
-        assert_eq!(parse(arg).unwrap(), expected);
+        assert_eq!(parse_param(arg).unwrap(), expected);
     }
 
     #[test]
@@ -68,7 +81,7 @@ mod tests {
             value: String::from("multiple=divider:ignored"),
             param_type: ParamType::HEADER,
         };
-        assert_eq!(parse(arg).unwrap(), expected);
+        assert_eq!(parse_param(arg).unwrap(), expected);
     }
 
     #[test]
@@ -79,7 +92,7 @@ mod tests {
             value: String::from("val"),
             param_type: ParamType::DATA,
         };
-        assert_eq!(parse(arg).unwrap(), expected);
+        assert_eq!(parse_param(arg).unwrap(), expected);
     }
 
     #[test]
@@ -90,7 +103,7 @@ mod tests {
             value: String::from("val"),
             param_type: ParamType::DATA,
         };
-        assert_eq!(parse(arg).unwrap(), expected);
+        assert_eq!(parse_param(arg).unwrap(), expected);
     }
 
     #[test]
@@ -101,7 +114,7 @@ mod tests {
             value: String::from("val"),
             param_type: ParamType::QUERY,
         };
-        assert_eq!(parse(arg).unwrap(), expected);
+        assert_eq!(parse_param(arg).unwrap(), expected);
     }
 
     #[test]
@@ -112,20 +125,23 @@ mod tests {
             value: String::from("val"),
             param_type: ParamType::QUERY,
         };
-        assert_eq!(parse(arg).unwrap(), expected);
+        assert_eq!(parse_param(arg).unwrap(), expected);
     }
 
     #[test]
     fn test_parse_empty() {
         let arg = "";
-        assert!(parse(arg).is_err(), "Empty param should result in error");
+        assert!(
+            parse_param(arg).is_err(),
+            "Empty param should result in error"
+        );
     }
 
     #[test]
     fn test_parse_missing() {
         let arg = "paramwithouthdivider";
         assert!(
-            parse(arg).is_err(),
+            parse_param(arg).is_err(),
             "Missing divider should result in error"
         );
     }
