@@ -1,5 +1,6 @@
 #![warn(clippy::all)]
 pub mod output;
+pub mod params;
 pub mod request;
 
 use crate::output::*;
